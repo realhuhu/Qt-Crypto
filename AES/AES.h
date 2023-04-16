@@ -6,7 +6,7 @@ namespace AES {
     // 11个4×4密钥
     unsigned int K[44][4];
 
-    void initKey(QString &key) {
+    QString initKey(QString &key) {
         // 不满32位十六进制数的，前端补0到32位
         if (key.length() != 32) key = QString("%1").arg(key, 32, QLatin1Char('0'));
 
@@ -28,6 +28,7 @@ namespace AES {
                 }
             }
         }
+        return "密钥:" + key;
     }
 
     // 有限域乘法

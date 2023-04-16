@@ -6,7 +6,7 @@ namespace DES {
     bool K[16][48];
 
     //初始化十六个子密钥
-    void initKey(const QString &key) {
+    QString initKey(const QString &key) {
         auto num_key = key.toULongLong(nullptr, 16);
         //转bool[64]
         bool bit_key[64];
@@ -38,6 +38,8 @@ namespace DES {
                 }
             }
         }
+
+        return "密钥:" + key;
     }
 
     //f运算

@@ -1,3 +1,4 @@
+#include <QDebug>
 #include <QComboBox>
 #include <QTextEdit>
 #include <QLineEdit>
@@ -6,11 +7,14 @@
 #include <QApplication>
 #include <QRegExpValidator>
 
+# include "utils.h"
 #include "DES/DES.h"
 #include "AES/AES.h"
+#include "RSA/RSA.h"
+#include "ElGamal/ElGamal.h"
 
 struct Algorithm {
-    QStringList all = {"none", "DES", "AES"};
+    QStringList all = {"none", "DES", "AES", "RSA", "ElGamal"};
     QString current = "none";
 };
 
@@ -24,7 +28,6 @@ int main(int argc, char *argv[]) {
 
     auto keyInput = new QLineEdit(widget);
     keyInput->setPlaceholderText("请选择加密方式");
-    keyInput->setClearButtonEnabled(true);
     keyInput->setDisabled(true);
 
     auto plaintextArea = new QTextEdit(widget);
@@ -56,40 +59,56 @@ int main(int argc, char *argv[]) {
     QObject::connect(
             selectBox,
             QOverload<const QString &>::of(&QComboBox::currentIndexChanged),
-            [keyInput, algorithm, submitButton, encryptButton, decryptButton](const QString &value)mutable {
+            [widget, keyInput, algorithm, submitButton, encryptButton, decryptButton](const QString &value)mutable {
                 algorithm->current = value;
                 keyInput->clear();
+                encryptButton->setDisabled(true);
+                decryptButton->setDisabled(true);
+
                 if (value == "none") {
-                    keyInput->setValidator(nullptr);
+                    widget->setWindowTitle("加解密");
                     keyInput->setPlaceholderText("请选择加密方式");
                     submitButton->setDisabled(true);
-                    encryptButton->setDisabled(true);
-                    decryptButton->setDisabled(true);
                     keyInput->setDisabled(true);
                     return;
                 }
 
                 if (value == "DES") {
+                    widget->setWindowTitle("DES:请输入密钥");
                     keyInput->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{16}")));
                     keyInput->setPlaceholderText("请输入16位十六进制密钥");
                 } else if (value == "AES") {
+                    widget->setWindowTitle("AES:请输入密钥");
                     keyInput->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{32}")));
                     keyInput->setPlaceholderText("请输入32位十六进制密钥");
+                } else if (value == "RSA") {
+                    widget->setWindowTitle("RSA:请输入私钥");
+                    keyInput->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{8}")));
+                    keyInput->setPlaceholderText("请输入8位十六进制私钥");
+                } else if (value == "ElGamal") {
+                    widget->setWindowTitle("ElGamal:请输入私钥");
+                    keyInput->setValidator(new QRegExpValidator(QRegExp("[0-9a-fA-F]{7}")));
+                    keyInput->setPlaceholderText("请输入8位十六进制私钥");
                 }
-                keyInput->setDisabled(false);
+
                 submitButton->setDisabled(false);
-                encryptButton->setDisabled(false);
-                decryptButton->setDisabled(false);
+                keyInput->setDisabled(false);
             });
 
-    QObject::connect(submitButton, &QPushButton::clicked, [widget, keyInput, algorithm] {
+    QObject::connect(submitButton, &QPushButton::clicked, [widget, keyInput, algorithm, encryptButton, decryptButton] {
         auto key = keyInput->text();
-        widget->setWindowTitle(algorithm->current + "密钥:" + key);
         if (algorithm->current == "DES") {
-            DES::initKey(key);
+            key = DES::initKey(key);
         } else if (algorithm->current == "AES") {
-            AES::initKey(key);
+            key = AES::initKey(key);
+        } else if (algorithm->current == "RSA") {
+            key = RSA::initKey(key);
+        } else if (algorithm->current == "ElGamal") {
+            key = ElGamal::initKey(key);
         }
+        widget->setWindowTitle(algorithm->current + " " + key);
+        encryptButton->setDisabled(false);
+        decryptButton->setDisabled(false);
     });
 
     QObject::connect(encryptButton, &QPushButton::clicked, [plaintextArea, ciphertextArea, algorithm] {
@@ -98,6 +117,10 @@ int main(int argc, char *argv[]) {
             ciphertext = DES::encrypt(plaintextArea->toPlainText());
         } else if (algorithm->current == "AES") {
             ciphertext = AES::encrypt(plaintextArea->toPlainText());
+        } else if (algorithm->current == "RSA") {
+            ciphertext = RSA::encrypt(plaintextArea->toPlainText());
+        } else if (algorithm->current == "ElGamal") {
+            ciphertext = ElGamal::encrypt(plaintextArea->toPlainText());
         }
         ciphertextArea->setText(ciphertext);
     });
@@ -108,6 +131,10 @@ int main(int argc, char *argv[]) {
             plaintext = DES::decrypt(ciphertextArea->toPlainText());
         } else if (algorithm->current == "AES") {
             plaintext = AES::decrypt(ciphertextArea->toPlainText());
+        } else if (algorithm->current == "RSA") {
+            plaintext = RSA::decrypt(ciphertextArea->toPlainText());
+        }else if (algorithm->current == "ElGamal") {
+            plaintext = ElGamal::decrypt(ciphertextArea->toPlainText());
         }
         plaintextArea->setText(plaintext);
     });

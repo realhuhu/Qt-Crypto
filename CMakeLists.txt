@@ -14,7 +14,7 @@ find_package(Qt5 COMPONENTS
         Widgets
         REQUIRED)
 
-add_executable(cryptology main.cpp DES/constant.h DES/DES.h AES/constant.h AES/AES.h)
+add_executable(cryptology main.cpp DES/constant.h DES/DES.h AES/constant.h AES/AES.h RSA/RSA.h RSA/constant.h ElGamal/constant.h ElGamal/ElGamal.h utils.h)
 target_link_libraries(cryptology
         Qt5::Core
         Qt5::Gui
